@@ -1,0 +1,5 @@
+name,source,path,length,anomaly_ratio,anomaly_segments,mean_anomaly_duration,max_anomaly_duration,seasonality_proxy,noise_proxy
+synthetic_collective_shift__crop_304_804,synthetic,data/raw/synthetic_tsb/synthetic/synthetic_collective_shift.out,500,0.1,2,25.0,26,0.9324273289883586,0.1703787452531449
+synthetic_contextual_phase__crop_444_944,synthetic,data/raw/synthetic_tsb/synthetic/synthetic_contextual_phase.out,500,0.26,2,65.0,66,0.9207021870321722,0.15766605439435227
+synthetic_noisy_subsequence__crop_347_847,synthetic,data/raw/synthetic_tsb/synthetic/synthetic_noisy_subsequence.out,500,0.09,1,45.0,45,0.74530677761549,0.3584461750585057
+synthetic_point_spikes__crop_305_805,synthetic,data/raw/synthetic_tsb/synthetic/synthetic_point_spikes.out,500,0.004,2,1.0,1,0.8618269231935466,0.17779952543525357
