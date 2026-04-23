@@ -9,6 +9,12 @@ from tsad_benchmark.data import crop_record, describe_record, discover_series_fi
 from tsad_benchmark.runner import run_records
 
 
+def is_evaluable(record) -> bool:
+    labels = record.labels
+    positives = int(labels.sum())
+    return 0 < positives < len(labels)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the TSB-UAD-style benchmark.")
     parser.add_argument("--data-root", default="data/raw/TSB-UAD-Public-v2", help="Root directory containing TSB-UAD files.")
@@ -23,20 +29,30 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     files = discover_series_files(args.data_root)
-    selected = select_series(files, limit=args.limit)
-    if not selected:
+    candidate_files = select_series(files, limit=len(files))
+    if not candidate_files:
         raise SystemExit(f"No supported files found under {args.data_root}")
 
     records = []
-    for path in selected:
+    skipped = 0
+    for path in candidate_files:
+        if len(records) >= args.limit:
+            break
         try:
             record = load_tsb_file(path)
-            records.append(crop_record(record, max_length=args.max_length))
+            record = crop_record(record, max_length=args.max_length)
+            if not is_evaluable(record):
+                skipped += 1
+                print(f"skip {path}: labels are single-class after cropping")
+                continue
+            records.append(record)
         except Exception as exc:
+            skipped += 1
             print(f"skip {path}: {exc}")
 
     if not records:
         raise SystemExit("No loadable two-column time-series files found.")
+    print(f"loaded {len(records)} records, skipped {skipped} candidates")
 
     manifest = pd.DataFrame([describe_record(record) for record in records])
     manifest_path = Path(args.manifest)

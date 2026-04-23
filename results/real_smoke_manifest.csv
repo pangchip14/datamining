@@ -1,0 +1,5 @@
+name,source,path,length,anomaly_ratio,anomaly_segments,mean_anomaly_duration,max_anomaly_duration,seasonality_proxy,noise_proxy
+processed_phpKo8OWT_col_1__crop_138607_143607,CreditCard,data/raw/TSB-UAD-Public-v2/TSB-UAD-Public-v2/CreditCard/processed_phpKo8OWT_col_1.csv,5000,0.0024,6,2.0,4,0.04469771426375484,0.9386815979927811
+processed_S01R01_col_3__crop_103499_108499,Daphnet,data/raw/TSB-UAD-Public-v2/TSB-UAD-Public-v2/Daphnet/processed_S01R01_col_3.csv,5000,0.0376,2,94.0,127,0.30493798182790627,90.0
+101-freeway-traffic__crop_22699_27699,Dodgers,data/raw/TSB-UAD-Public-v2/TSB-UAD-Public-v2/Dodgers/101-freeway-traffic.csv,5000,0.2548,38,33.526315789473685,293,0.8328016996007697,3.0
+processed_1_gecco2018_water_quality_col_2__crop_71284_76284,GECCO,data/raw/TSB-UAD-Public-v2/TSB-UAD-Public-v2/GECCO/processed_1_gecco2018_water_quality_col_2.csv,5000,0.0368,8,23.0,23,0.956976900219574,0.0

@@ -42,7 +42,11 @@ data/raw/TSB-UAD-Public-v2/
 ```bash
 bash scripts/download_tsb_uad_public_v2.sh
 PYTHONPATH=src python scripts/run_benchmark.py --data-root data/raw/TSB-UAD-Public-v2 --limit 60 --max-length 20000
+PYTHONPATH=src python scripts/summarize_results.py --input results/real_main_results.csv --output-dir figures/real_main_summary
+PYTHONPATH=src python scripts/summarize_characteristics.py --input results/real_main_results.csv --output-dir figures/real_characteristics
+PYTHONPATH=src python scripts/make_case_figures.py --results results/real_main_results.csv --scores-dir results/real_main_scores --output-dir figures/real_cases
 PYTHONPATH=src python scripts/run_ablation.py --mode real --data-root data/raw/TSB-UAD-Public-v2 --limit 12 --max-length 12000 --output results/real_ablation_results.csv
+PYTHONPATH=src python scripts/summarize_ablation.py --input results/real_ablation_results.csv --output-dir figures/real_ablation
 ```
 
 如果下载中断，重新运行同一个脚本即可断点续传。

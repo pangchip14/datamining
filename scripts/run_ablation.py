@@ -12,6 +12,11 @@ from tsad_benchmark.runner import run_record
 from tsad_benchmark.synthetic import make_synthetic_suite
 
 
+def is_evaluable(record) -> bool:
+    positives = int(record.labels.sum())
+    return 0 < positives < len(record.labels)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run core ablations for the assignment.")
     parser.add_argument("--mode", choices=["synthetic", "real"], default="synthetic")
@@ -27,11 +32,21 @@ def load_records(mode: str, data_root: str, limit: int, max_length: int):
         return make_synthetic_suite()
     files = select_series(discover_series_files(data_root), limit=limit)
     records = []
-    for path in files:
+    skipped = 0
+    for path in select_series(discover_series_files(data_root), limit=10_000):
+        if len(records) >= limit:
+            break
         try:
-            records.append(crop_record(load_tsb_file(path), max_length=max_length))
+            record = crop_record(load_tsb_file(path), max_length=max_length)
+            if not is_evaluable(record):
+                skipped += 1
+                print(f"skip {path}: labels are single-class after cropping")
+                continue
+            records.append(record)
         except Exception as exc:
+            skipped += 1
             print(f"skip {path}: {exc}")
+    print(f"loaded {len(records)} records, skipped {skipped} candidates")
     return records
 
 

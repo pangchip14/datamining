@@ -21,15 +21,50 @@ class TimeSeriesRecord:
     labels: np.ndarray
 
 
-def load_tsb_file(path: str | Path) -> TimeSeriesRecord:
-    """Load a TSB-UAD-style file whose first two columns are value and label."""
-    path = Path(path)
+def _read_univariate_value_label(path: Path) -> tuple[np.ndarray, np.ndarray]:
+    """Read a univariate TSB-UAD-style value/label pair.
+
+    Accepted formats:
+    - headered CSV with Data and Label columns
+    - headered CSV with exactly one non-label value column and Label
+    - headerless two-column file
+
+    Multivariate files with multiple non-label columns are intentionally
+    rejected because the study scope is univariate time-series anomaly
+    detection.
+    """
     sep = "\t" if path.suffix.lower() == ".tsv" else None
-    df = pd.read_csv(path, header=None, sep=sep, engine="python").dropna(how="all")
-    if df.shape[1] < 2:
+    header_df = pd.read_csv(path, sep=sep, engine="python").dropna(how="all")
+    columns = [str(col) for col in header_df.columns]
+    lower_to_col = {col.lower(): col for col in columns}
+    if "label" in lower_to_col:
+        label_col = lower_to_col["label"]
+        if "data" in lower_to_col:
+            value_col = lower_to_col["data"]
+        else:
+            value_candidates = [col for col in columns if col != label_col]
+            if len(value_candidates) != 1:
+                raise ValueError(
+                    f"{path} appears multivariate ({len(value_candidates)} value columns); "
+                    "skipping for univariate study"
+                )
+            value_col = value_candidates[0]
+        return header_df[value_col].to_numpy(dtype=float), header_df[label_col].to_numpy()
+
+    raw_df = pd.read_csv(path, header=None, sep=sep, engine="python").dropna(how="all")
+    if raw_df.shape[1] < 2:
         raise ValueError(f"{path} has fewer than two columns")
-    values = clean_values(df.iloc[:, 0].to_numpy(dtype=float))
-    labels = df.iloc[:, 1].to_numpy()
+    if raw_df.shape[1] > 2:
+        raise ValueError(f"{path} appears multivariate without a Label header")
+    return raw_df.iloc[:, 0].to_numpy(dtype=float), raw_df.iloc[:, 1].to_numpy()
+
+
+def load_tsb_file(path: str | Path) -> TimeSeriesRecord:
+    """Load a univariate TSB-UAD-style file."""
+    path = Path(path)
+    raw_values, raw_labels = _read_univariate_value_label(path)
+    values = clean_values(raw_values)
+    labels = raw_labels
     labels = np.asarray(labels, dtype=float)
     labels = np.where(labels > 0, 1, 0).astype(int)
     if values.shape[0] != labels.shape[0]:
