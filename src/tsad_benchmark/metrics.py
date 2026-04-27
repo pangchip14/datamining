@@ -8,6 +8,9 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
+from .config import DEFAULT_VUS_THRESHOLDS, DEFAULT_VUS_WINDOW
+from .vus import official_vus
+
 
 def _valid_binary(labels: np.ndarray) -> bool:
     labels = np.asarray(labels, dtype=int)
@@ -95,16 +98,24 @@ def vus_auc_approx(
     return float(np.nanmean(values)) if values else float("nan")
 
 
-def evaluate_scores(labels: np.ndarray, scores: np.ndarray) -> dict[str, float]:
+def evaluate_scores(
+    labels: np.ndarray,
+    scores: np.ndarray,
+    vus_window: int = DEFAULT_VUS_WINDOW,
+    vus_thresholds: int = DEFAULT_VUS_THRESHOLDS,
+) -> dict[str, float]:
     scores = np.asarray(scores, dtype=float)
     finite = np.isfinite(scores)
     if not finite.all():
         fill = float(np.nanmedian(scores[finite])) if finite.any() else 0.0
         scores = scores.copy()
         scores[~finite] = fill
+    vus_roc, vus_pr = official_vus(labels, scores, sliding_window=vus_window, thresholds=vus_thresholds)
     return {
         "auroc": safe_auroc(labels, scores),
         "auprc": safe_auprc(labels, scores),
+        "vus_roc": vus_roc,
+        "vus_pr": vus_pr,
         "vus_roc_approx": vus_auc_approx(labels, scores, metric="roc"),
         "vus_pr_approx": vus_auc_approx(labels, scores, metric="pr"),
         "best_f1": best_f1(labels, scores),

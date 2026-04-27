@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tsad_benchmark.config import DEFAULT_VUS_THRESHOLDS, DEFAULT_VUS_WINDOW
 from tsad_benchmark.plots import save_case_overlay
 from tsad_benchmark.runner import run_records
 from tsad_benchmark.synthetic import make_synthetic_suite
@@ -15,7 +16,12 @@ def main() -> None:
     figure_dir.mkdir(parents=True, exist_ok=True)
 
     records = make_synthetic_suite()
-    results = run_records(records, save_scores_dir=score_dir)
+    results = run_records(
+        records,
+        save_scores_dir=score_dir,
+        vus_window=DEFAULT_VUS_WINDOW,
+        vus_thresholds=DEFAULT_VUS_THRESHOLDS,
+    )
     output = results_dir / "synthetic_results.csv"
     results.to_csv(output, index=False)
     print(f"wrote {output}")

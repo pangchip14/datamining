@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 
-from tsad_benchmark.config import MAIN_ALGORITHMS, default_window_size
+from tsad_benchmark.config import DEFAULT_VUS_THRESHOLDS, DEFAULT_VUS_WINDOW, MAIN_ALGORITHMS, default_window_size
 from tsad_benchmark.data import crop_record, discover_series_files, load_tsb_file, select_series
 from tsad_benchmark.runner import run_record
 from tsad_benchmark.synthetic import make_synthetic_suite
@@ -24,13 +24,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=12)
     parser.add_argument("--output", default="results/ablation_results.csv")
     parser.add_argument("--max-length", type=int, default=12000)
+    parser.add_argument("--vus-window", type=int, default=DEFAULT_VUS_WINDOW)
+    parser.add_argument("--vus-thresholds", type=int, default=DEFAULT_VUS_THRESHOLDS)
     return parser.parse_args()
 
 
 def load_records(mode: str, data_root: str, limit: int, max_length: int):
     if mode == "synthetic":
         return make_synthetic_suite()
-    files = select_series(discover_series_files(data_root), limit=limit)
     records = []
     skipped = 0
     for path in select_series(discover_series_files(data_root), limit=10_000):
@@ -73,6 +74,8 @@ def main() -> None:
                 window=window,
                 normalize=True,
                 save_scores_dir=None,
+                vus_window=args.vus_window,
+                vus_thresholds=args.vus_thresholds,
             )
             for row in ablation_rows:
                 row["ablation"] = "window_size"
@@ -86,6 +89,8 @@ def main() -> None:
                 window=base_window,
                 normalize=normalize,
                 save_scores_dir=None,
+                vus_window=args.vus_window,
+                vus_thresholds=args.vus_thresholds,
             )
             for row in ablation_rows:
                 row["ablation"] = "normalization"

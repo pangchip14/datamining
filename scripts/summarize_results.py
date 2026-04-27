@@ -13,7 +13,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Summarize benchmark results.")
     parser.add_argument("--input", default="results/synthetic_results.csv", help="Input result CSV.")
     parser.add_argument("--output-dir", default="figures/summary", help="Directory for figures and tables.")
-    parser.add_argument("--metric", default="vus_pr_approx", help="Main metric for ranking.")
+    parser.add_argument("--metric", default="vus_pr", help="Main metric for ranking.")
     return parser.parse_args()
 
 

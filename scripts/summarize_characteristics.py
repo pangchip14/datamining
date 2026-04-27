@@ -14,7 +14,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Summarize performance by dataset characteristics.")
     parser.add_argument("--input", default="results/real_main_results.csv")
     parser.add_argument("--output-dir", default="figures/real_characteristics")
-    parser.add_argument("--metric", default="vus_pr_approx")
+    parser.add_argument("--metric", default="vus_pr")
     return parser.parse_args()
 
 
@@ -70,6 +70,8 @@ def main() -> None:
             .agg(
                 auroc=("auroc", "mean"),
                 auprc=("auprc", "mean"),
+                vus_roc=("vus_roc", "mean"),
+                vus_pr=("vus_pr", "mean"),
                 vus_roc_approx=("vus_roc_approx", "mean"),
                 vus_pr_approx=("vus_pr_approx", "mean"),
                 runtime_sec=("runtime_sec", "mean"),

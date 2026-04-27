@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 
 import numpy as np
 import pandas as pd
@@ -142,7 +143,9 @@ def describe_record(record: TimeSeriesRecord) -> dict[str, float | int | str]:
     labels = np.asarray(record.labels, dtype=int)
     segments = anomaly_segments(labels)
     durations = [end - start for start, end in segments]
+    series_id = f"{record.source}/{record.name}"
     return {
+        "series_id": series_id,
         "name": record.name,
         "source": record.source,
         "path": record.path,
@@ -184,6 +187,13 @@ def crop_record(record: TimeSeriesRecord, max_length: int | None) -> TimeSeriesR
         values=record.values[start:end],
         labels=record.labels[start:end],
     )
+
+
+def safe_record_name(record: TimeSeriesRecord) -> str:
+    """Filesystem-safe identifier for score files."""
+    raw = record.name
+    safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", raw).strip("_")
+    return safe or "series"
 
 
 def select_series(paths: list[Path], limit: int = 60) -> list[Path]:

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 RANDOM_SEED = 20260423
+DEFAULT_VUS_WINDOW = 100
+DEFAULT_VUS_THRESHOLDS = 250
 MAIN_ALGORITHMS = (
     "rolling_zscore",
     "knn",

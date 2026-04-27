@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from tsad_benchmark.config import DEFAULT_VUS_THRESHOLDS, DEFAULT_VUS_WINDOW
 from tsad_benchmark.data import crop_record, describe_record, discover_series_files, load_tsb_file, select_series
 from tsad_benchmark.runner import run_records
 
@@ -23,6 +24,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manifest", default="results/benchmark_manifest.csv", help="Selected dataset manifest path.")
     parser.add_argument("--scores-dir", default="results/benchmark_scores", help="Directory for point-level scores.")
     parser.add_argument("--max-length", type=int, default=20000, help="Crop long series to this many points; <=0 disables cropping.")
+    parser.add_argument("--vus-window", type=int, default=DEFAULT_VUS_WINDOW, help="Official VUS buffer window.")
+    parser.add_argument("--vus-thresholds", type=int, default=DEFAULT_VUS_THRESHOLDS, help="Number of thresholds for official VUS.")
     return parser.parse_args()
 
 
@@ -60,7 +63,12 @@ def main() -> None:
     manifest.to_csv(manifest_path, index=False)
     print(f"wrote {manifest_path}")
 
-    results = run_records(records, save_scores_dir=args.scores_dir)
+    results = run_records(
+        records,
+        save_scores_dir=args.scores_dir,
+        vus_window=args.vus_window,
+        vus_thresholds=args.vus_thresholds,
+    )
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     results.to_csv(output, index=False)
