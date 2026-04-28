@@ -75,8 +75,8 @@ def vus_auc_approx(
     """Range-dilated VUS-style approximation.
 
     This averages AUROC or AUPRC over increasing label-dilation radii. It is
-    useful for early experiments; strict final reporting should cross-check an
-    official VUS implementation.
+    useful for early experiments; strict final reporting should use the
+    range-aware VUS implementation exposed as ``vus_pr`` / ``vus_roc``.
     """
     labels = np.asarray(labels, dtype=int)
     if labels.size == 0:

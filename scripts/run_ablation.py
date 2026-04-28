@@ -24,12 +24,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=12)
     parser.add_argument("--output", default="results/ablation_results.csv")
     parser.add_argument("--max-length", type=int, default=12000)
+    parser.add_argument(
+        "--crop-strategy",
+        choices=["middle", "head", "tail", "label_centered"],
+        default="middle",
+    )
     parser.add_argument("--vus-window", type=int, default=DEFAULT_VUS_WINDOW)
     parser.add_argument("--vus-thresholds", type=int, default=DEFAULT_VUS_THRESHOLDS)
     return parser.parse_args()
 
 
-def load_records(mode: str, data_root: str, limit: int, max_length: int):
+def load_records(mode: str, data_root: str, limit: int, max_length: int, crop_strategy: str):
     if mode == "synthetic":
         return make_synthetic_suite()
     records = []
@@ -38,7 +43,7 @@ def load_records(mode: str, data_root: str, limit: int, max_length: int):
         if len(records) >= limit:
             break
         try:
-            record = crop_record(load_tsb_file(path), max_length=max_length)
+            record = crop_record(load_tsb_file(path), max_length=max_length, strategy=crop_strategy)
             if not is_evaluable(record):
                 skipped += 1
                 print(f"skip {path}: labels are single-class after cropping")
@@ -53,21 +58,23 @@ def load_records(mode: str, data_root: str, limit: int, max_length: int):
 
 def main() -> None:
     args = parse_args()
-    records = load_records(args.mode, args.data_root, args.limit, args.max_length)
+    records = load_records(args.mode, args.data_root, args.limit, args.max_length, args.crop_strategy)
     if not records:
         raise SystemExit("no records available")
 
     rows = []
     for record in tqdm(records, desc="ablation records"):
         base_window = default_window_size(len(record.values))
-        window_values = sorted(
-            {
-                max(4, min(len(record.values), int(0.01 * len(record.values)))),
-                base_window,
-                max(4, min(len(record.values), int(0.05 * len(record.values)))),
-            }
-        )
-        for window in window_values:
+        window_grid = [
+            ("small_1pct", max(4, min(len(record.values), int(0.01 * len(record.values))))),
+            ("default_2pct", base_window),
+            ("large_5pct", max(4, min(len(record.values), int(0.05 * len(record.values))))),
+        ]
+        seen_windows = set()
+        for window_label, window in window_grid:
+            if window in seen_windows:
+                continue
+            seen_windows.add(window)
             ablation_rows = run_record(
                 record,
                 algorithms=MAIN_ALGORITHMS,
@@ -79,7 +86,8 @@ def main() -> None:
             )
             for row in ablation_rows:
                 row["ablation"] = "window_size"
-                row["ablation_value"] = str(window)
+                row["ablation_value"] = window_label
+                row["window"] = int(window)
             rows.extend(ablation_rows)
 
         for normalize in (False, True):

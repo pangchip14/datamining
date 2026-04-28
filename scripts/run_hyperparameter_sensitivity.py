@@ -29,20 +29,25 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-root", default="data/raw/TSB-UAD-Public-v2")
     parser.add_argument("--limit", type=int, default=12)
     parser.add_argument("--max-length", type=int, default=12000)
+    parser.add_argument(
+        "--crop-strategy",
+        choices=["middle", "head", "tail", "label_centered"],
+        default="middle",
+    )
     parser.add_argument("--output", default="results/real_hyperparameter_results.csv")
     parser.add_argument("--vus-window", type=int, default=DEFAULT_VUS_WINDOW)
     parser.add_argument("--vus-thresholds", type=int, default=DEFAULT_VUS_THRESHOLDS)
     return parser.parse_args()
 
 
-def load_records(data_root: str, limit: int, max_length: int):
+def load_records(data_root: str, limit: int, max_length: int, crop_strategy: str):
     records = []
     skipped = 0
     for path in select_series(discover_series_files(data_root), limit=10_000):
         if len(records) >= limit:
             break
         try:
-            record = crop_record(load_tsb_file(path), max_length=max_length)
+            record = crop_record(load_tsb_file(path), max_length=max_length, strategy=crop_strategy)
             if not is_evaluable(record):
                 skipped += 1
                 print(f"skip {path}: labels are single-class after cropping")
@@ -109,7 +114,7 @@ def run_config(windows, config: dict[str, object]):
 
 def main() -> None:
     args = parse_args()
-    records = load_records(args.data_root, args.limit, args.max_length)
+    records = load_records(args.data_root, args.limit, args.max_length, args.crop_strategy)
     if not records:
         raise SystemExit("no records available")
 

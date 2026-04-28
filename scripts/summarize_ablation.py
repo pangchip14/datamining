@@ -19,10 +19,17 @@ def save_line_plot(summary: pd.DataFrame, ablation: str, metric: str, output: Pa
     subset = summary[summary["ablation"] == ablation].copy()
     if subset.empty:
         return
+    if ablation == "window_size":
+        order = {"small_1pct": 0, "default_2pct": 1, "large_5pct": 2}
+    elif ablation == "normalization":
+        order = {"raw": 0, "z_normalized": 1}
+    else:
+        order = {}
+    subset["_order"] = subset["ablation_value"].map(order).fillna(999)
     output.parent.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(7, 4.5))
     for algorithm, group in subset.groupby("algorithm"):
-        group = group.sort_values("ablation_value")
+        group = group.sort_values(["_order", "ablation_value"])
         ax.plot(group["ablation_value"], group[metric], marker="o", label=algorithm)
     ax.set_xlabel(ablation)
     ax.set_ylabel(f"Mean {metric}")

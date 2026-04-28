@@ -5,6 +5,8 @@
 ## Current Status
 
 - `最终方案.md`：最终研究方案存档。
+- `docs/feedback_revision_notes.md`：反馈质疑对应的修正记录。
+- `docs/vus_crosscheck.md`：VUS 实现与 TSB-UAD / VUS 公开核心逻辑的交叉核对记录。
 - `src/tsad_benchmark/`：实验 pipeline 代码。
 - `scripts/run_synthetic_pilot.py`：先运行 synthetic mechanism test（合成机制测试），验证算法和评价流程。
 - `scripts/run_benchmark.py`：用于 TSB-UAD 格式真实数据集的批量实验。
@@ -41,13 +43,13 @@ data/raw/TSB-UAD-Public-v2/
 
 ```bash
 bash scripts/download_tsb_uad_public_v2.sh
-PYTHONPATH=src python scripts/run_benchmark.py --data-root data/raw/TSB-UAD-Public-v2 --limit 60 --max-length 20000
+PYTHONPATH=src python scripts/run_benchmark.py --data-root data/raw/TSB-UAD-Public-v2 --limit 60 --max-length 20000 --crop-strategy middle
 PYTHONPATH=src python scripts/summarize_results.py --input results/real_main_results.csv --output-dir figures/real_main_summary --metric vus_pr
 PYTHONPATH=src python scripts/summarize_characteristics.py --input results/real_main_results.csv --output-dir figures/real_characteristics --metric vus_pr
 PYTHONPATH=src python scripts/make_case_figures.py --results results/real_main_results.csv --scores-dir results/real_main_scores --output-dir figures/real_cases --metric vus_pr
-PYTHONPATH=src python scripts/run_ablation.py --mode real --data-root data/raw/TSB-UAD-Public-v2 --limit 12 --max-length 12000 --output results/real_ablation_results.csv
+PYTHONPATH=src python scripts/run_ablation.py --mode real --data-root data/raw/TSB-UAD-Public-v2 --limit 12 --max-length 12000 --crop-strategy middle --output results/real_ablation_results.csv
 PYTHONPATH=src python scripts/summarize_ablation.py --input results/real_ablation_results.csv --output-dir figures/real_ablation --metric vus_pr
-PYTHONPATH=src python scripts/run_hyperparameter_sensitivity.py --data-root data/raw/TSB-UAD-Public-v2 --limit 12 --max-length 12000 --output results/real_hyperparameter_results.csv
+PYTHONPATH=src python scripts/run_hyperparameter_sensitivity.py --data-root data/raw/TSB-UAD-Public-v2 --limit 12 --max-length 12000 --crop-strategy middle --output results/real_hyperparameter_results.csv
 PYTHONPATH=src python scripts/summarize_hyperparameters.py --input results/real_hyperparameter_results.csv --output-dir figures/real_hyperparameters --metric vus_pr
 ```
 
@@ -55,6 +57,7 @@ PYTHONPATH=src python scripts/summarize_hyperparameters.py --input results/real_
 
 ## Notes
 
+- 真实主实验默认使用 label-neutral middle crop；裁剪只依赖序列长度，不依赖 anomaly label，避免 evaluation leakage。
 - `vus_roc` 和 `vus_pr` 使用与 TSB-UAD / TSB-AD 公开实现一致的 range-aware VUS 计算，默认 `vus_window=100`、`vus_thresholds=250`。`vus_roc_approx` 和 `vus_pr_approx` 仍保留为早期 range-dilated approximation（标签膨胀近似）对照，不作为最终主指标。
 - Matrix Profile 优先使用 `stumpy`；如果环境没有安装，会回退到 pairwise subsequence distance fallback（成对窗口距离回退实现），长序列上会较慢。
 - `ik_density` 使用 `ikpykit.anomaly.IDKD` 的官方 Isolation Distributional Kernel Detector 实现。`IDKD.score_samples` 原生定义为分数越低越异常，本工程会取负号以保持所有算法“分数越高越异常”的统一评价约定。

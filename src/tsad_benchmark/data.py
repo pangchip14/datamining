@@ -159,29 +159,43 @@ def describe_record(record: TimeSeriesRecord) -> dict[str, float | int | str]:
     }
 
 
-def crop_record(record: TimeSeriesRecord, max_length: int | None) -> TimeSeriesRecord:
-    """Crop very long series to a deterministic segment that preserves anomalies.
+def crop_record(
+    record: TimeSeriesRecord,
+    max_length: int | None,
+    strategy: str = "middle",
+) -> TimeSeriesRecord:
+    """Crop very long series with a deterministic, label-neutral default.
 
-    If anomalies exist, the crop is centered around the anomaly span. Otherwise,
-    it uses the beginning of the series. This is a compute-safety feature for
-    pilot runs; full experiments can disable it with a large max_length.
+    The default ``middle`` strategy never inspects anomaly labels. This avoids
+    leaking evaluation labels into the benchmark data window. ``label_centered``
+    is retained only for explicit legacy/sanity-check runs.
     """
     if max_length is None or max_length <= 0 or len(record.values) <= max_length:
         return record
 
-    labels = np.asarray(record.labels, dtype=int)
-    positives = np.where(labels > 0)[0]
-    if positives.size:
-        center = int((positives[0] + positives[-1]) // 2)
-        start = max(0, center - max_length // 2)
-        end = min(len(labels), start + max_length)
-        start = max(0, end - max_length)
-    else:
+    n = len(record.values)
+    strategy = strategy.lower()
+    if strategy == "middle":
+        start = max(0, (n - max_length) // 2)
+        end = start + max_length
+    elif strategy == "head":
         start = 0
         end = max_length
+    elif strategy == "tail":
+        start = n - max_length
+        end = n
+    elif strategy == "label_centered":
+        labels = np.asarray(record.labels, dtype=int)
+        positives = np.where(labels > 0)[0]
+        center = int((positives[0] + positives[-1]) // 2) if positives.size else max_length // 2
+        start = max(0, center - max_length // 2)
+        end = min(n, start + max_length)
+        start = max(0, end - max_length)
+    else:
+        raise ValueError(f"unknown crop strategy: {strategy}")
 
     return TimeSeriesRecord(
-        name=f"{record.name}__crop_{start}_{end}",
+        name=f"{record.name}__{strategy}crop_{start}_{end}",
         source=record.source,
         path=record.path,
         values=record.values[start:end],

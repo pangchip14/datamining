@@ -24,8 +24,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manifest", default="results/benchmark_manifest.csv", help="Selected dataset manifest path.")
     parser.add_argument("--scores-dir", default="results/benchmark_scores", help="Directory for point-level scores.")
     parser.add_argument("--max-length", type=int, default=20000, help="Crop long series to this many points; <=0 disables cropping.")
-    parser.add_argument("--vus-window", type=int, default=DEFAULT_VUS_WINDOW, help="Official VUS buffer window.")
-    parser.add_argument("--vus-thresholds", type=int, default=DEFAULT_VUS_THRESHOLDS, help="Number of thresholds for official VUS.")
+    parser.add_argument(
+        "--crop-strategy",
+        choices=["middle", "head", "tail", "label_centered"],
+        default="middle",
+        help="Deterministic crop strategy. The default is label-neutral.",
+    )
+    parser.add_argument("--vus-window", type=int, default=DEFAULT_VUS_WINDOW, help="Range-aware VUS buffer window.")
+    parser.add_argument("--vus-thresholds", type=int, default=DEFAULT_VUS_THRESHOLDS, help="Number of thresholds for range-aware VUS.")
     return parser.parse_args()
 
 
@@ -43,7 +49,7 @@ def main() -> None:
             break
         try:
             record = load_tsb_file(path)
-            record = crop_record(record, max_length=args.max_length)
+            record = crop_record(record, max_length=args.max_length, strategy=args.crop_strategy)
             if not is_evaluable(record):
                 skipped += 1
                 print(f"skip {path}: labels are single-class after cropping")
